@@ -1,0 +1,8 @@
+torch
+torchvision
+numpy
+torchmetrics
+pyyaml
+torchtext 
+pandas 
+matplotlib
