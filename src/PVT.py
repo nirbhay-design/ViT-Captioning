@@ -309,7 +309,7 @@ def PVT_large(image_size, num_classes):
     return pvt
 
 if __name__ == "__main__":
-    a = torch.rand(2,3,224,224)
+    a = torch.rand(2,3,256,320)
     params = lambda x: sum([y.numel() for y in x.parameters()])
 
     pvt = PVT_large(224, 1000)

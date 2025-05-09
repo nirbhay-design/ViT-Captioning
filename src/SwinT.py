@@ -477,7 +477,7 @@ def swinT_L(image_resolution, num_classes):
 
 
 if __name__ == "__main__":
-    image_res = (224,224)
+    image_res = (256,340)
     num_classes = 1000
 
     swin = swinT_T(image_res, num_classes)

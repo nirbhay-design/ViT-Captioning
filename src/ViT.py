@@ -4,65 +4,13 @@ import torch.nn as nn
 import torch.nn.functional as F 
 import torch.optim as optim 
 import torchvision.transforms as transforms 
+from backbone_utils import * 
 
 def getHW(size):
     if isinstance(size, int):
         return size, size
     elif isinstance(size, tuple) or isinstance(size, list):
         return size 
-
-
-class PatchEmbedding(nn.Module):
-    def __init__(self, image_size, in_channels = 3, patch_size = 8, embed_size = 128):
-        super().__init__()
-        self.patch_size_h, self.patch_size_w = getHW(patch_size)
-        h,w = getHW(image_size)
-        assert h % self.patch_size_h == 0 and w % self.patch_size_w == 0, "image_size should be divisible by patch_size"
-        self.linear = nn.Linear(self.patch_size_h * self.patch_size_w * in_channels, embed_size)
-        self.patch_size = patch_size
-
-    def patch_image(self, x):
-        B,C,H,W = x.shape
-        H_patch = H // self.patch_size_h 
-        W_patch = W // self.patch_size_w
-        x = x.reshape(B, C, H_patch, self.patch_size_h, W_patch, self.patch_size_w)
-        x = x.permute(0, 2, 4, 3, 5, 1)
-        x = x.reshape(B, H_patch * W_patch, self.patch_size_h * self.patch_size_w * C)
-        return x
-
-    def forward(self, x):
-        # x: [B, C, H, W]
-        x = self.patch_image(x)
-        patch_embeddings = self.linear(x)
-
-        return patch_embeddings
-    
-class ImageWPosEnc(nn.Module):
-    def __init__(self, image_size = 224, in_channels = 3, patch_size = 8, embed_size = 128):
-        super().__init__()
-        self.image_size = getHW(image_size) 
-        self.in_channels = in_channels
-        self.patch_size = getHW(patch_size) 
-        self.embed_size = embed_size 
-
-        self.patch_embed = PatchEmbedding(self.image_size,
-                                        self.in_channels,
-                                        self.patch_size,
-                                        self.embed_size)
-
-        self.num_embedding = (self.image_size[0] // self.patch_size[0]) * (self.image_size[1] // self.patch_size[1])
-        self.pos_encoding = nn.Parameter(torch.rand(1, self.num_embedding + 1, self.embed_size))
-        self.cls_token = nn.Parameter(torch.rand(1, 1, self.embed_size))
-
-    def forward(self, x):
-        B,_,_,_ = x.shape         
-        patch_embeddings = self.patch_embed(x)
-        pos_encoding = self.pos_encoding.repeat(B, 1, 1)
-        cls_token = self.cls_token.repeat(B, 1, 1)
-        patch_cls = torch.cat([cls_token, patch_embeddings], dim = 1)
-        embeddings = patch_cls + pos_encoding 
-
-        return embeddings
 
 class Attention(nn.Module):
     def __init__(self, embed_dim):
@@ -123,78 +71,68 @@ class TransformerEncoder(nn.Module):
     
 class Vit(nn.Module):
     def __init__(self, 
-                 image_size = 224, 
+                 backbone_layers = [], 
                  in_channels = 3, 
                  patch_size = 8, 
                  encoder_layers = 6, 
                  msa_heads = 8, 
                  embed_dim = 128, 
                  hidden_dim = 256, 
-                 num_class = 10,
                  dropout=0.0):
         
         super().__init__()
 
-        self.patch_creation = ImageWPosEnc(
-            image_size = image_size, 
-            in_channels = in_channels, 
-            patch_size = patch_size, 
-            embed_size = embed_dim
-        )
+        backbone = ResnetBackbone(layers=backbone_layers,embed_dim=embed_dim)
+        self.sin_pos_encoding = SinPosEncoding2D()
+        self.joint_vector = JointIPPE(backbone, self.sin_pos_encoding)
 
         self.transformer_encoder = nn.Sequential(
             *[TransformerEncoder(msa_heads, embed_dim, hidden_dim, dropout) for _ in range(encoder_layers)]
         )
 
-        self.classification = nn.Linear(embed_dim, num_class)
-
     def forward(self, x):
-        x = self.patch_creation(x)
+        x, _ = self.joint_vector(x)
+        x = x.transpose(-1,-2)
         x = self.transformer_encoder(x)
-        x = x[:,0,:]
-        x = x.flatten(1)
-        x = self.classification(x)
         return x
     
-def vit_base(image_size, num_classes):
-    vit = Vit(image_size=image_size,
+def vit_base(backbone_layers):
+    vit = Vit(backbone_layers=backbone_layers,
               in_channels=3,
               patch_size=16,
               encoder_layers=12,
               msa_heads=12,
               embed_dim=768,
               hidden_dim=3072,
-              num_class=num_classes,
               dropout=0.6)
     return vit
     
-def vit_large(image_size, num_classes):
-    vit = Vit(image_size=image_size,
+def vit_large(backbone_layers):
+    vit = Vit(backbone_layers=backbone_layers,
               in_channels=3,
               patch_size=16,
               encoder_layers=24,
               msa_heads=16,
               embed_dim=1024,
               hidden_dim=4096,
-              num_class=num_classes,
               dropout=0.6)
     return vit
 
-def vit_huge(image_size, num_classes):
-    vit = Vit(image_size=image_size,
+def vit_huge(backbone_layers):
+    vit = Vit(backbone_layers=backbone_layers,
               in_channels=3,
               patch_size=16,
               encoder_layers=32,
               msa_heads=16,
               embed_dim=1280,
               hidden_dim=5120,
-              num_class=num_classes,
               dropout=0.6)
     return vit
 
 if __name__ == "__main__":
-    a = torch.rand(2,3,224,224)
-    vit = vit_huge(224, 1000)
+    backbone_layers = ['conv1', 'bn1', 'relu', 'maxpool', 'layer1', 'layer2', 'layer3', 'layer4']
+    a = torch.rand(2,3,256,123)
+    vit = vit_huge(backbone_layers)
 
     out = vit(a)
     params = lambda x: sum([y.numel() for y in x.parameters()])
