@@ -191,7 +191,6 @@ class Pit(nn.Module):
                  depths = [3, 7, 9], 
                  embed_dim = 128, 
                  hidden_dim = 256, 
-                 num_class = 10,
                  dropout=0.0):
         
         super().__init__()
@@ -234,18 +233,14 @@ class Pit(nn.Module):
                 embed_dim *= 2
         
         self.transformer_layer_list = nn.ModuleList(transformer_layer_list)
-        self.classification = nn.Linear(embed_dim, num_class)
 
     def forward(self, x):
         x = self.patch_creation(x)
         for layer in self.transformer_layer_list:
             x = layer(x)
-        x = x[:,0,:]
-        x = x.flatten(1)
-        x = self.classification(x)
         return x
     
-def pit_ti(image_size, num_classes):
+def pit_ti(image_size):
     pit = Pit(image_size=image_size,
               in_channels=3,
               patch_size=16,
@@ -254,11 +249,10 @@ def pit_ti(image_size, num_classes):
               depths = [2, 6, 4],
               embed_dim= 64,
               hidden_dim=4 * 64,
-              num_class=num_classes,
               dropout=0.6)
     return pit
 
-def pit_xs(image_size, num_classes):
+def pit_xs(image_size):
     pit = Pit(image_size=image_size,
               in_channels=3,
               patch_size=16,
@@ -267,11 +261,10 @@ def pit_xs(image_size, num_classes):
               depths = [2, 6, 4],
               embed_dim=96,
               hidden_dim=4 * 96,
-              num_class=num_classes,
               dropout=0.6)
     return pit
 
-def pit_s(image_size, num_classes):
+def pit_s(image_size):
     pit = Pit(image_size=image_size,
               in_channels=3,
               patch_size=16,
@@ -280,11 +273,10 @@ def pit_s(image_size, num_classes):
               depths = [2, 6, 4],
               embed_dim=144,
               hidden_dim=4 * 144,
-              num_class=num_classes,
               dropout=0.6)
     return pit
 
-def pit_b(image_size, num_classes):
+def pit_b(image_size):
     pit = Pit(image_size=image_size,
               in_channels=3,
               patch_size=14,
@@ -293,13 +285,13 @@ def pit_b(image_size, num_classes):
               depths = [3, 6, 4],
               embed_dim=256,
               hidden_dim=4 * 256,
-              num_class=num_classes,
               dropout=0.6)
     return pit
 
 if __name__ == "__main__":
-    a = torch.rand(2,3,256,320)
-    pit = pit_xs(224, 1000)
+    img_size = (256,320)
+    a = torch.rand(2,3,*img_size)
+    pit = pit_xs(img_size)
 
     out = pit(a)
     params = lambda x: sum([y.numel() for y in x.parameters()])

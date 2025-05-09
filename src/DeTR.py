@@ -131,37 +131,7 @@ warnings.filterwarnings("ignore")
 
 # feed forward network
 
-class FeedForward(nn.Module):
-    def __init__(self, input_dim, embed_dim, out_dim, dropout=0.1):
-        super(FeedForward, self).__init__()
-        self.layers = nn.Sequential(
-            nn.Linear(input_dim, embed_dim),
-            nn.ReLU(),
-            nn.Dropout(p=dropout),
-            nn.Linear(embed_dim, out_dim)
-        )
 
-    def forward(self, x):
-        return self.layers(x)
-
-class TransformerEncoderBlock(nn.Module):
-    def __init__(self, heads, embed_dim, dropout):
-        super(TransformerEncoderBlock, self).__init__()
-        self.multihead = nn.MultiheadAttention(embed_dim, heads, dropout=dropout, batch_first=True)
-        self.layer_norm1 = nn.LayerNorm(embed_dim)
-        self.layer_norm2 = nn.LayerNorm(embed_dim)
-
-        self.feedforward = FeedForward(embed_dim, embed_dim*8, embed_dim, dropout)
-        self.dropout = nn.Dropout(dropout)
-
-
-    def forward(self, query, key, value, pos_query, pos_key):
-        query_with_pos = query + pos_query
-        key_with_pos = key + pos_key
-        out_layer1 = self.layer_norm1(self.dropout(self.multihead(query_with_pos, key_with_pos, value)[0]) + query)
-        out_layer2 = self.layer_norm2(out_layer1 + self.dropout(self.feedforward(out_layer1)))
-
-        return out_layer2
 
 class TransformerEncoder(nn.Module):
     def __init__(self, n_layers, head, embed_dim, dropout):
