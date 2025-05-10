@@ -40,8 +40,9 @@ class CaptionModel(nn.Module):
             if p.dim() > 1:
                 nn.init.xavier_uniform_(p)
 
-    def forward(self, image, text = None):
+    def forward(self, image, text = None, key_mask = None):
         encoder_output = self.encoder_model(image)
+        
 
 if __name__ == "__main__":
     pass 
