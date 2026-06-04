@@ -6,7 +6,7 @@ import torchvision
 import matplotlib.pyplot as plt
 from PIL import Image
 import numpy as np
-from src.data import get_dataloader
+from data.data import get_dataloader
 import sys
 import warnings
 warnings.filterwarnings("ignore")
