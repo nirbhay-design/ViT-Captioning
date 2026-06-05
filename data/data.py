@@ -14,13 +14,6 @@ import pickle
 from PIL import Image
 from torch.utils.data import DataLoader
 
-def progress(current,total):
-    progress_percent = (current * 50 / total)
-    progress_percent_int = int(progress_percent)
-    print(f"\r|{chr(9608)* progress_percent_int}{' '*(50-progress_percent_int)}|{current}/{total}",end='')
-    if (current == total):
-        print()
-
 class Vocabulary():
     def __init__(self, feq, tok):
         self.feq = feq
@@ -37,7 +30,7 @@ class Vocabulary():
         return [tok for tok in self.tok(text)]
 
     def build_voc(self, text_list):
-        idx = 4
+        idx = len(self.itos)
         curfeq = {}
         for text in text_list:
             for word in self.tokenizer(text):

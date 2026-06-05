@@ -8,9 +8,25 @@ from PIL import Image
 import numpy as np
 from data.data import get_dataloader
 import sys
+import argparse
 import warnings
 warnings.filterwarnings("ignore")
 
+
+def get_args():
+    parser = argparse.ArgumentParser(description="ViT Captioning Training Script")
+    parser.add_argument('--dataset', type=str, default='coco', help='dataset to choose')
+    parser.add_argument('--gpu', type=int, default=5, help='GPU id to use')
+    parser.add_argument('--return_logs', action='store_true', help='Whether to return logs during training')
+    parser.add_argument('--save_path', type=str, default='model_weights.pth', help='Path to save the trained model weights')
+    parser.add_argument('--epochs', type=int, default=500, help='Number of training epochs')
+    parser.add_argument('--save_every', type=int, default=100, help='model checkpointing')
+    parser.add_argument('--lr', type=float, default=0.0001, help='Learning rate for the optimizer')
+    parser.add_argument('--wd', type=float, default=0.0001, help='Weight decay for the optimizer')
+    parser.add_argument('--model', type=str, default='vit/detr', help='choose between vit and detr')
+    
+    args = parser.parse_args()
+    return args
 
 def progress(current,total):
     progress_percent = (current * 50 / total)
@@ -102,7 +118,7 @@ def train(
 
 if __name__ == "__main__":
 
-    args = build_args(sys.argv)
+    args = get_args()
 
     train_loader, vocab = get_dataloader(args)
     args.vocabulary_size = len(vocab)
@@ -131,40 +147,3 @@ if __name__ == "__main__":
 
 
 
-# def build_args(argv_list):
-    
-#     # default
-#     gpu_id = 5 
-#     return_logs = False
- 
-#     if '--gpu' in argv_list:
-#         gpu_id = argv_list[argv_list.index('--gpu') + 1]
-
-#     if '--return_logs' in argv_list:
-#         return_logs = True
-
-#     args = {
-#         # data configs
-#         'img_size': [256, 340],
-#         'image_path': "/DATA/dataset/Flickr30k/Flickr30k/Images",
-#         'captions_path': "/DATA/dataset/Flickr30k/Flickr30k/captions.txt",
-#         'batch_size': 32,
-#         'pin_memory': True,
-#         'num_workers': 4,
-
-#         # detr configs
-#         'backbone_layers': ['conv1', 'bn1', 'relu', 'maxpool', 'layer1', 'layer2', 'layer3', 'layer4'],
-#         'encoder_layers': 6,
-#         'decoder_layers': 6,
-#         'encoder_heads': 8,
-#         'decoder_heads': 8,
-#         'embed_dim': 256,
-#         'dropout': 0.1,
-    
-#         # training configs
-#         'device': torch.device(f"cuda:{gpu_id}"),
-#         'lr': 0.0001,
-#         'return_logs': return_logs
-#     }
-
-#     return args
