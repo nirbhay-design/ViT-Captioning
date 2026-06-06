@@ -4,9 +4,11 @@ import torch.optim as optim
 import torch.nn.functional as F
 import torchvision
 import matplotlib.pyplot as plt
+import yaml
+from yaml.loader import SafeLoader
 from PIL import Image
 import numpy as np
-from data.data import get_dataloader
+from data import dataloaders
 import sys
 import argparse
 import warnings
@@ -24,32 +26,55 @@ def get_args():
     parser.add_argument('--lr', type=float, default=0.0001, help='Learning rate for the optimizer')
     parser.add_argument('--wd', type=float, default=0.0001, help='Weight decay for the optimizer')
     parser.add_argument('--model', type=str, default='vit/detr', help='choose between vit and detr')
+    parser.add_argument('--vocab_save_path', type=str, default='vocabulary/vocab.pkl', help='Path to save the vocabulary')
     
     args = parser.parse_args()
     return args
 
-def progress(current,total):
+def yaml_loader(yaml_file):
+    with open(yaml_file,'r') as f:
+        config_data = yaml.load(f,Loader=SafeLoader)
+    
+    return config_data
+
+def progress(current, total, **kwargs):
     progress_percent = (current * 50 / total)
     progress_percent_int = int(progress_percent)
-    print(f"\r|{chr(9608)* progress_percent_int}{' '*(50-progress_percent_int)}|{current}/{total}",end='')
+    data_ = ""
+    for meter, data in kwargs.items():
+        data_ += f"{meter}: {round(data,2)}|"
+    print(f" |{chr(9608)* progress_percent_int}{' '*(50-progress_percent_int)}|{current}/{total}|{data_}",end='\r')
     if (current == total):
         print()
 
+def get_data(dataset, data_config):
+    dl = dataloaders.get(dataset, dataloaders["coco"])(data_config)
+
+    print(f"Train dataset: {len(dl['train_data'])}")
+    print(f"Test dataset: {len(dl['test_data'])}")
+
+    print(f"Train dataloader: {len(dl['train_loader'])}")
+    print(f"Test dataloader: {len(dl['test_loader'])}")
+
+    return dl["train_loader"], dl["test_loader"]
+
+
 def load_model(args):
-    detr = Detr(
-        backbone_layers=args.backbone_layers,
-        encoder_layers=args.encoder_layers,
-        decoder_layers=args.decoder_layers,
-        encoder_heads=args.encoder_heads,
-        decoder_heads=args.decoder_heads,
-        embed_dim=args.embed_dim,
-        dropout=args.dropout,
-        vocab_size=args.vocabulary_size,
-    )
+    pass 
+    # detr = Detr(
+    #     backbone_layers=args.backbone_layers,
+    #     encoder_layers=args.encoder_layers,
+    #     decoder_layers=args.decoder_layers,
+    #     encoder_heads=args.encoder_heads,
+    #     decoder_heads=args.decoder_heads,
+    #     embed_dim=args.embed_dim,
+    #     dropout=args.dropout,
+    #     vocab_size=args.vocabulary_size,
+    # )
 
-    print(f'# of parameters: {params(detr)}')
+    # print(f'# of parameters: {params(detr)}')
 
-    return detr
+    # return detr
 
 def get_key_masks(key_, bool_mask=False):
     # key padding mask -> 1 where padding is there 0 otherwise
@@ -120,8 +145,8 @@ if __name__ == "__main__":
 
     args = get_args()
 
-    train_loader, vocab = get_dataloader(args)
-    args.vocabulary_size = len(vocab)
+    # train_loader, test_loader = get_data(p
+    # args.vocabulary_size = len(vocab)
     args.print_args()
     device = torch.device(f'cuda:{args.gpu}')
 
