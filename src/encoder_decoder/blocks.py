@@ -40,6 +40,22 @@ class TransformerEncoderBlock(nn.Module):
 
         return out_layer2
 
+class TransformerEncoder(nn.Module):
+    def __init__(self, n_layers, head, embed_dim, dropout):
+        super().__init__()
+
+        self.encoder_layers = nn.ModuleList([
+            TransformerEncoderBlock(head, embed_dim, dropout)
+            for _ in range(n_layers)
+        ])
+
+    def forward(self, query, pos):
+        output = query
+        for layer in self.encoder_layers:
+            output = layer(output, output, output, pos, pos)
+
+        return output
+
 class TransformerDecoderBlock(nn.Module):
     def __init__(self, heads, embed_dim, dropout):
         super(TransformerDecoderBlock, self).__init__()
