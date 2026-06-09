@@ -1,0 +1,31 @@
+SEED: 42
+data: 
+    data_path: /data/home/nirbhays/dataset
+    batch_size: &bs 128
+    img_size: [256, 340]
+    vocab_save_path: vocabulary/vocab.pkl
+    num_workers: 1
+    pin_memory: True
+    prefetch_factor: 2
+return_logs: False
+epochs: &epoch 800
+gpu_id: 3
+opt: SGD
+opt_params:
+  lr: !!float 4e-1
+  momentum: 0.9
+  weight_decay: !!float 1e-4
+schedular_params:
+  T_max: *epoch 
+  eta_min: 0.001
+model_params:
+  backbone_layers: ['conv1', 'bn1', 'relu', 'maxpool', 'layer1', 'layer2', 'layer3', 'layer4']
+  encoder_layers: 6
+  decoder_layers: 6
+  encoder_heads: 8
+  decoder_heads: 8
+  embed_dim: 256
+  dropout: 0.1
+distributed: False
+model_save_path: saved_models
+save_every: 100

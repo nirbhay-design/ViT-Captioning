@@ -123,10 +123,4 @@ class Detr(nn.Module):
             )
         )
 
-        _, predicted_words = decoder_output[:,-1:,:].max(dim=-1)
-        y_out = torch.cat([y, predicted_words], dim=1)
-
-        return y_out
-            
-params = lambda x: torch.tensor([y.numel() for y in x.parameters()]).sum()
-    
+        return decoder_output    

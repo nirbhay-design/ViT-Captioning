@@ -112,7 +112,7 @@ def coco_dataloader(config):
     train_loader = DataLoader(
         train_data,
         batch_size=batch_size,
-        shuffle=True,
+        shuffle=False,
         pin_memory=pin_memory,
         num_workers=num_workers,
         prefetch_factor=prefetch_factor,
