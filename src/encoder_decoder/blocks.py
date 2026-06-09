@@ -65,26 +65,17 @@ class TransformerDecoderBlock(nn.Module):
 
         self.encoder_replicate = TransformerEncoderBlock(heads, embed_dim, dropout)
 
-    def _with_pos_enc(self, x, pos):
-        return x + pos
-    
-    def get_attn_mask(self, L, S, device):
-        attn_mask = torch.tril(torch.ones((L,S), device=device))
-        # attn_mask[attn_mask == 0] = torch.tensor(float('-inf'))
-        # attn_mask[attn_mask == 1] = 0
-        
-        return ~attn_mask.bool()
-
     def forward(self, query, memory, pos_query, pos_key, key_mask=None):
         L = S = query.shape[1]
         query_pos = query + pos_query
+        query_key = query + pos_key
         out_layer1 = self.layer_norm(self.dropout(
             self.masked_multihead_attention(
-                query_pos,
-                query_pos,
-                query_pos,
+                query = query_pos,
+                key = query_key,
+                value = query,
                 key_padding_mask = key_mask,
-                attn_mask = self.get_attn_mask(L, S, query.device)
+                is_causal = True,
             )[0]) + query)
 
         out_layer2 = self.encoder_replicate(out_layer1, memory, memory, pos_query, pos_key)

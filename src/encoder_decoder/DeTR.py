@@ -25,12 +25,12 @@ class Transformer(nn.Module):
             if p.dim() > 1:
                 nn.init.xavier_uniform_(p)
 
-    def forward_train(self, x, x_pos_encoding, y, y_pos_encoding, key_mask=None):
+    def forward(self, x, x_pos_encoding, y, y_pos_encoding, key_mask=None):
 
         # x is the processed feature extracted
 
         # x shape: [N, C, HW]
-        # pos_encoding: [N, C, HW]
+        # x_pos_encoding: [N, C, HW]
         # y shape: [N, seqlen, C]
         # y_pos_encoding: sinosudal pos encoding
 
@@ -49,68 +49,6 @@ class Transformer(nn.Module):
         )
 
         return decoder_output
-    
-    def forward_eval(self, 
-                    x:torch.tensor,
-                    x_pos_encoding: torch.tensor,
-                    linear_output_layer: nn.Linear,
-                    text_embeddings: nn.Embedding,
-                    text_pos_encoding: SinPosEncoding1D,
-                    ):
-        
-        device = x.device
-        batch_size = x.shape[0]
-
-        # getting output from encoder
-        x = x.transpose(1,2)
-        x_pos_encoding = x_pos_encoding.transpose(1,2)
-        encoder_output = self.encoder(x, x_pos_encoding)
-
-        generating_output = 30 # generate output 30 times
-        # generating words from transformer
-        y_out = torch.ones(batch_size, 1, device=device).type(torch.int64) # <SOS> token vector
-
-        for i in range(generating_output):
-            # positional encoding
-            cur_out = text_embeddings(y_out)
-            cur_out_pos_enc = text_pos_encoding(cur_out)
-
-            # output from decoder
-            decoder_output = linear_output_layer( # [N, cur_seq_len, vocab_dim]
-                self.decoder(
-                    cur_out, 
-                    encoder_output,
-                    cur_out_pos_enc,
-                    x_pos_encoding
-                )
-            )
-
-            _, predicted_words = decoder_output[:,-1:,:].max(dim=-1)
-            y_out = torch.cat([y_out, predicted_words], dim=1)
-
-        return y_out
-
-    def forward(self, 
-                x, 
-                x_pos_encoding, 
-                y=None, 
-                y_pos_encoding=None, 
-                output_layer=None, 
-                text_embeddings=None,
-                text_pos_encoding=None,
-                key_mask = None,
-                eval_mode=False):
-        
-        if eval_mode:
-            return self.forward_eval(
-                x, 
-                x_pos_encoding,
-                output_layer, 
-                text_embeddings, 
-                text_pos_encoding,
-            )
-        else:
-            return self.forward_train(x, x_pos_encoding, y, y_pos_encoding,key_mask=key_mask)
 
 
 class Detr(nn.Module):
@@ -137,7 +75,7 @@ class Detr(nn.Module):
         
         self.output_layer = nn.Linear(embed_dim, vocab_size)
 
-    def forward_train(self, x, y, key_mask=None):
+    def forward(self, x, y, key_mask=None):
         # x -> image -> [N, 3, W, H]
         # y -> text -> [N, seqlen]
         x, pos_x = self.joint_vector(x)
@@ -155,27 +93,40 @@ class Detr(nn.Module):
         output = self.output_layer(attention_text_image)
 
         return output
-    
-    def forward_eval(self, x):
-        x, pos_x = self.joint_vector(x)
 
-        output = self.transformer(
-            x,
-            pos_x,
-            output_layer=self.output_layer,
-            text_embeddings=self.text_embeddings,
-            text_pos_encoding = self.sin_pos_encoding_text,
-            eval_mode=True
+    def get_embedding(self, x):
+        x, x_pos_encoding = self.joint_vector(x)
+
+        device = x.device
+        batch_size = x.shape[0]
+
+        # getting output from encoder
+        x = x.transpose(1,2)
+        x_pos_encoding = x_pos_encoding.transpose(1,2)
+        encoder_output = self.transformer.encoder(x, x_pos_encoding)
+
+        return encoder_output, x_pos_encoding
+    
+    def get_decoding(self, encoder_output, x_pos_encoding, y):
+        # y_out = torch.ones(batch_size, 1, device=device).type(torch.int64) # <SOS> token vector
+
+        cur_out = self.text_embeddings(y)
+        cur_out_pos_enc = self.sin_pos_encoding_text(cur_out)
+
+        # output from decoder
+        decoder_output = self.output_layer( # [N, cur_seq_len, vocab_dim]
+            self.transformer.decoder(
+                cur_out, 
+                encoder_output,
+                cur_out_pos_enc,
+                x_pos_encoding
+            )
         )
 
-        return output
+        _, predicted_words = decoder_output[:,-1:,:].max(dim=-1)
+        y_out = torch.cat([y, predicted_words], dim=1)
 
-    def forward(self, x, y=None, eval_mode=False, key_mask=None):
-        if eval_mode:
-            return self.forward_eval(x)
-        else:
-            assert y is not None, "Y cannot be None while training"
-            return self.forward_train(x, y, key_mask)
+        return y_out
             
 params = lambda x: torch.tensor([y.numel() for y in x.parameters()]).sum()
     
