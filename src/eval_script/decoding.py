@@ -25,7 +25,7 @@ class Decoding():
     def beam_search(self, x, max_len=30, beam_width=5):
         pass 
 
-    def min_p(self, x, max_len=30):
+    def min_p(self, x, max_len=30, p = 0.9):
         pass
 
     def top_k(self, x, max_len=30, k=5):
