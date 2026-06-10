@@ -147,7 +147,7 @@ def train(
 
         schedular.step()
 
-        print(f'GPU: {device}| epoch: [{epoch+1}/{epochs}] loss: {float(cur_loss):.3f}')
+        print(f'[GPU{device}] epoch: [{epoch+1}/{epochs}] loss: {float(cur_loss):.3f}')
 
         if global_rank == 0:
             if (epoch + 1) % save_every == 0 and (epoch + 1) < epochs: # save every 100 epoch
