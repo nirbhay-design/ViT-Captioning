@@ -186,3 +186,24 @@ GPU: 1| epoch: [72/80] loss: 0.989
 GPU: 0| epoch: [72/80] loss: 0.993
 GPU: 0| epoch: [73/80] loss: 1.022
 GPU: 1| epoch: [73/80] loss: 1.025
+GPU: 0| epoch: [74/80] loss: 1.081
+GPU: 1| epoch: [74/80] loss: 1.092
+GPU: 1| epoch: [75/80] loss: 1.034
+GPU: 0| epoch: [75/80] loss: 1.015
+GPU: 1| epoch: [76/80] loss: 1.012
+GPU: 0| epoch: [76/80] loss: 0.999
+GPU: 0| epoch: [77/80] loss: 1.038
+GPU: 1| epoch: [77/80] loss: 1.024
+GPU: 0| epoch: [78/80] loss: 1.054
+GPU: 1| epoch: [78/80] loss: 1.045
+GPU: 0| epoch: [79/80] loss: 1.127
+GPU: 1| epoch: [79/80] loss: 1.132
+GPU: 1| epoch: [80/80] loss: 1.081
+GPU: 0| epoch: [80/80] loss: 1.111
+rank:1 reached barrierrank:0 reached barrier
+
+destroying for rank: 1 and global_rank: 1
+Model weights saved
+destroying for rank: 0 and global_rank: 0
+pretraining time: 3h 32m 25s
+pretraining time: 3h 32m 25s

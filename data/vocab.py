@@ -73,7 +73,7 @@ class Vocab:
         self.stoi = {v: k for k, v in self.itos.items()}
     def encode(self, text):
         tokenize_text = self.clean_caption(text).split()
-        print(tokenize_text)
+        # print(tokenize_text)
 
         numeric_val = [self.stoi['<SOS>']]
         numeric_val += [self.stoi[token] if token in self.stoi else self.stoi['<UNK>'] for token in tokenize_text]
