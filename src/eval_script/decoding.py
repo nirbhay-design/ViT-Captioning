@@ -59,16 +59,19 @@ class Decoding():
         y_out = torch.ones(batch_size, 1, device=device).type(torch.int64) # <SOS> token vector
         for _ in range(max_len):
             decoder_output = self.model.model.get_decoding(embedding, pos_encoding, y_out)
-            probs = F.softmax(decoder_output[:,-1:,:], dim = -1) # topk probs
-            threshold = p*probs.max()
-            mask = probs >= threshold
-            y = torch.ones_like(probs)*torch.tensor(-1000000.0)
-            alive = F.softmax(torch.where(probs[0,0,:]>=threshold.item(), probs[0,0,:], y[0,0,:]), dim=-1)
-            sampled_index = alive.multinomial(num_samples=1, replacement=True)
+            probs = F.softmax(decoder_output[:,-1,:], dim = -1)
+            max_prob, _ = probs.max(dim = -1, keepdim=True)
+            threshold = p * max_prob
+            mask = (probs >= threshold)
+            # y = torch.ones_like(probs) * torch.tensor(-1e7)
+            # alive = F.softmax(torch.where(probs[0,0,:]>=threshold.item(), probs[0,0,:], y[0,0,:]), dim=-1)
+            # sampled_index = alive.multinomial(num_samples=1, replacement=True)
             # print(sampled_index.unsqueeze(0).shape)
-            y_out = torch.cat([y_out, sampled_index.unsqueeze(0)], dim=1)
+            prob_mask = probs * mask
+            new_probs = prob_mask / prob_mask.sum(dim = -1, keepdim=True)
+            sampled_index = new_probs.multinomial(num_samples=1)
+            y_out = torch.cat([y_out, sampled_index], dim=1)
         return y_out
-        
 
     def top_k(self, x, max_len=30, k=5):
         embedding, pos_encoding = self.model.model.get_embedding(x)
@@ -77,9 +80,32 @@ class Decoding():
         y_out = torch.ones(batch_size, 1, device=device).type(torch.int64)
         for _ in range(max_len):
             decoder_output = self.model.model.get_decoding(embedding, pos_encoding, y_out)
-            _, indicies = decoder_output[:,-1:,:].topk(k, dim = -1) # topk probs
-            sampled_index = indicies.flatten()[torch.randint(0, indicies.numel(), (1,))]
-            # print(sampled_index.unsqueeze(0).shape)
-            y_out = torch.cat([y_out, sampled_index.unsqueeze(0)], dim=1)
-
+            probs = F.softmax(decoder_output[:,-1,:], dim = -1)
+            values_top_k, indicies = probs.topk(k, dim = -1) # topk probs
+            prob_mask = torch.zeros_like(probs)
+            prob_mask.scatter_(dim = -1, index = indicies, src=values_top_k)
+            new_probs = prob_mask / prob_mask.sum(dim = -1, keepdim=True)
+            sampled_index = new_probs.multinomial(num_samples=1)
+            y_out = torch.cat([y_out, sampled_index], dim=1)
         return y_out
+
+    def top_p(self, x, max_len=30, p=0.9):
+        embedding, pos_encoding = self.model.model.get_embedding(x)
+        device = embedding.device
+        batch_size = embedding.shape[0]
+        y_out = torch.ones(batch_size, 1, device=device).type(torch.int64)
+        for _ in range(max_len):
+            decoder_output = self.model.model.get_decoding(embedding, pos_encoding, y_out)
+            probs = F.softmax(decoder_output[:,-1,:], dim = -1) 
+            sorted_probs, sorted_prob_index = probs.sort(dim=-1, descending=True)
+            cum_sum_sorted = torch.cumsum(sorted_probs, dim = -1)
+            mask = (cum_sum_sorted <= p)
+            mask[:,1:] = mask[:,:-1].clone()
+            mask[:,0]=True
+            prob_mask = sorted_probs * mask
+            new_probs = prob_mask / prob_mask.sum(dim = -1, keepdim=True)
+            sampled_index_sorted = new_probs.multinomial(num_samples=1)
+            sampled_index = torch.gather(sorted_prob_index, -1, sampled_index_sorted)
+            y_out = torch.cat([y_out, sampled_index], dim=1)
+        return y_out
+            

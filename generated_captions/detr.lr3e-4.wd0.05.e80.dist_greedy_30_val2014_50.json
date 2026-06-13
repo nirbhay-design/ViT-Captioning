@@ -118,5 +118,35 @@
     ],
     "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000259614.jpg": [
         "<SOS> a zebra standing in the dirt near a fence <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000510275.jpg": [
+        "<SOS> a banana peel on the ground next to a cell phone <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000247986.jpg": [
+        "<SOS> a person holding a cell phone in their hand <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000404209.jpg": [
+        "<SOS> a plate of food and a cup of coffee <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000103485.jpg": [
+        "<SOS> a group of men playing a game of soccer <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000182755.jpg": [
+        "<SOS> a desk with a laptop and a desktop computer <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000103127.jpg": [
+        "<SOS> a dog is looking out the window of a vehicle <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000192905.jpg": [
+        "<SOS> two zebras standing in a field of dry grass <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000329562.jpg": [
+        "<SOS> a large white airplane on a open field <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000529522.jpg": [
+        "<SOS> a man surfing on a surfboard in the water <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000553094.jpg": [
+        "<SOS> a jet flying in the air with a sky background <EOS>"
     ]
 }

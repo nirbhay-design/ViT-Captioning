@@ -1,0 +1,152 @@
+{
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000312103.jpg": [
+        "<SOS> a man in a red shirt and tie holding a sandwich <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000571764.jpg": [
+        "<SOS> a man standing in a kitchen preparing food <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000098590.jpg": [
+        "<SOS> a group of skiers standing on a snow covered slope <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000509811.jpg": [
+        "<SOS> a desk with a laptop and a keyboard <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000079121.jpg": [
+        "<SOS> a hotel room with a bed and a lamp <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000098981.jpg": [
+        "<SOS> a herd of cattle standing on top of a grass covered field <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000431691.jpg": [
+        "<SOS> a man and a woman are drinking a cup <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000067833.jpg": [
+        "<SOS> a pizza with cheese and olives on a table <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000252549.jpg": [
+        "<SOS> a bunch of stuff is laying out on a table <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000000564.jpg": [
+        "<SOS> a man is playing tennis on a court <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000387562.jpg": [
+        "<SOS> a giraffe standing next to a zebra on a field <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000333156.jpg": [
+        "<SOS> a cake with a knife and fork on a plate <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000211115.jpg": [
+        "<SOS> a plate of food on a red table <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000091883.jpg": [
+        "<SOS> a table with plates of food and a drink <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000315388.jpg": [
+        "<SOS> a person on a skateboard is performing a trick <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000472671.jpg": [
+        "<SOS> a stuffed animal sitting on top of a table next to a toy car <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000141102.jpg": [
+        "<SOS> a plate of food with a fork and knife <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000080462.jpg": [
+        "<SOS> a city street with a lot of boats parked on the beach <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000564133.jpg": [
+        "<SOS> a herd of elephants walking through a dry grass field <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000124599.jpg": [
+        "<SOS> a couple of people standing on a beach under an umbrella <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000293832.jpg": [
+        "<SOS> a woman is taking a picture of herself in a mirror <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000345711.jpg": [
+        "<SOS> a street sign on a pole on a sunny day <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000143247.jpg": [
+        "<SOS> a bedroom with a bed and a desk with a laptop <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000354307.jpg": [
+        "<SOS> a man is sleeping on a bed with a hat on his head <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000012946.jpg": [
+        "<SOS> a man in a suit is walking down the street <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000035738.jpg": [
+        "<SOS> a woman is holding a wii remote in her hand <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000404710.jpg": [
+        "<SOS> a man riding an elephant jumping over a fence <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000396178.jpg": [
+        "<SOS> a computer keyboard sitting on top of a desk <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000445569.jpg": [
+        "<SOS> an elephant standing in the dirt near a mountain <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000226111.jpg": [
+        "<SOS> a street sign with a sticker on it <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000329323.jpg": [
+        "<SOS> a group of people standing around a table with a cake on it <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000079188.jpg": [
+        "<SOS> a couple of giraffes standing in a field <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000494887.jpg": [
+        "<SOS> two men sitting at a table with pizza and beer <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000512013.jpg": [
+        "<SOS> a plate of food with a sandwich and salad <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000079362.jpg": [
+        "<SOS> a large jetliner flying through a cloudy sky <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000366723.jpg": [
+        "<SOS> a keyboard sitting on top of a desk next to a mouse <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000312682.jpg": [
+        "<SOS> a box with a half eaten donut and a knife <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000577522.jpg": [
+        "<SOS> a cat is sleeping on a desk next to a laptop <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000414852.jpg": [
+        "<SOS> a man is standing in front of a mirror on a skateboard <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000259614.jpg": [
+        "<SOS> a zebra standing in the dirt near a fence <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000510275.jpg": [
+        "<SOS> a banana peel on the ground next to a cell phone <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000247986.jpg": [
+        "<SOS> a person holding a cell phone in their hand <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000404209.jpg": [
+        "<SOS> a plate of food and a cup of coffee <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000103485.jpg": [
+        "<SOS> a group of people are playing soccer on a field <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000182755.jpg": [
+        "<SOS> a desk with a laptop and a desktop computer <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000103127.jpg": [
+        "<SOS> a dog is looking out the window of a vehicle <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000192905.jpg": [
+        "<SOS> two zebras standing in a field of tall grass <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000329562.jpg": [
+        "<SOS> a large white airplane on a open field <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000529522.jpg": [
+        "<SOS> a man surfing on a surfboard in the water <EOS>"
+    ],
+    "/data/home/nirbhays/dataset/val2014/COCO_val2014_000000553094.jpg": [
+        "<SOS> a jet flying in the air with a sky background <EOS>"
+    ]
+}

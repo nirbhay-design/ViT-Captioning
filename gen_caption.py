@@ -24,9 +24,9 @@ def get_args():
     parser.add_argument("--image_path", type=str, required=True, help="Path to the input image or directory")
     parser.add_argument("--vocab_path", type=str, required=True, help="Path to the vocabulary file.")
     parser.add_argument("--model_path", type=str, required=True, help="Path to the trained model file.")
-    parser.add_argument("--decoding_strategy", type=str, default="greedy", choices=["greedy", "beam_search", "min_p", "top_k"], help="Decoding strategy to use for caption generation.")
+    parser.add_argument("--decoding_strategy", type=str, default="greedy", choices=["greedy", "beam_search", "min_p", "top_k", "top_p"], help="Decoding strategy to use for caption generation.")
     parser.add_argument("--config", type=str, required=True, help="Path to the configuration file.")
-    parser.add_argument("--p", type=float, default = 0.95, required=False, help="p value for min_p")
+    parser.add_argument("--p", type=float, default = 0.95, required=False, help="p value for min_p or top_p")
     parser.add_argument("--k", type=int, default = 1000, required=False, help="k value for top_k")
     parser.add_argument("--beam", type=int, default=5, required=False, help="beam size for beam search")
     parser.add_argument("--max_len", type=int, default = 30, required=False, help="max_length for generated caption")
@@ -60,7 +60,8 @@ def generate_caption(model_path, image_path, vocab_path, decoding_strategy, save
         "greedy": decoder.greedy, 
         "beam_search": decoder.beam_search,
         "min_p": decoder.min_p,
-        "top_k": decoder.top_k
+        "top_k": decoder.top_k,
+        "top_p": decoder.top_p
     }
 
     all_image_paths = []
@@ -93,7 +94,8 @@ if __name__ == "__main__":
         "greedy": {"max_len": args.max_len},
         "beam_search": {"max_len": args.max_len, "beam_width": args.beam},
         "min_p": {"max_len": args.max_len, "p": args.p},
-        "top_k": {"max_len": args.max_len, "k": args.k}
+        "top_k": {"max_len": args.max_len, "k": args.k},
+        "top_p": {"max_len": args.max_len, "p": args.p}
     }
     cur_decoding_params = params_for_decoding[args.decoding_strategy]
     generated_caption_list = generate_caption(args.model_path, args.image_path, args.vocab_path, args.decoding_strategy, args.save_img, **cur_decoding_params)
@@ -101,8 +103,11 @@ if __name__ == "__main__":
         print(f"{i}: {j}")
     
     if len(generated_caption_list) > 1:
+        decoding_name = args.decoding_strategy
+        for _, values in params_for_decoding[decoding_name].items():
+            decoding_name += f"_{str(values)}"
         os.makedirs("generated_captions", exist_ok = True)
-        file_path = os.path.join("generated_captions", ".".join(args.model_path.split("/")[-1].split(".")[:-1]) + "_" + args.image_path.split("/")[-1] + f"_{args.num_images if args.num_images else ''}" + '.json')
+        file_path = os.path.join("generated_captions", ".".join(args.model_path.split("/")[-1].split(".")[:-1]) + "_" + decoding_name + "_" + args.image_path.split("/")[-1] + f"_{args.num_images if args.num_images else ''}" + '.json')
         print(f"saving to: {file_path}")
         with open(file_path, "w") as f:
             json.dump(generated_caption_list, f, indent = 4)
