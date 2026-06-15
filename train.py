@@ -35,6 +35,7 @@ def get_args():
     parser.add_argument('--save_every', type=int, default=100, help='model checkpointing')
     parser.add_argument('--bs', type=int, default=128, help='Batch size')
     parser.add_argument('--nw', type=int, default=4, help='Number of workers')
+    parser.add_argument('--warmup_epochs', type=int, help='Number of warmup epochs')
     parser.add_argument('--pf', type=int, default=2, help='Prefetch factor')
     parser.add_argument('--lr', type=float, default=1e-4, help='Learning rate for the optimizer')
     parser.add_argument('--wd', type=float, default=0.05, help='Weight decay for the optimizer')
@@ -72,18 +73,9 @@ def input_target_split(text, eos_token):
     return inp_text, tgt_text
 
 def train(
-            model,
-            data,
-            loss_function,
-            optimizer,
-            schedular,
-            epochs,
-            device,
-            global_rank,
-            return_logs,
-            save_model_rank,
-            grad_clip,
-            save_every = 10
+            model, data, loss_function, optimizer,
+            schedular, epochs, device, global_rank,
+            return_logs, save_model_rank, grad_clip=1.0, save_every=10
         ):
     
     total_len = len(data)
@@ -145,10 +137,20 @@ def main(rank=0, global_rank=0, world_size=1, config={}, args=None, is_distribut
         # print(model)
         print(f"Model parameters: {params(model)}")
 
-    loss = nn.CrossEntropyLoss()
+    loss = nn.CrossEntropyLoss(ignore_index=dl['vocab'].stoi['<PAD>'])
     optimizer = optim.AdamW(model.parameters(), **config['opt_params'])
-    opt_lr_schedular = optim.lr_scheduler.CosineAnnealingLR(optimizer, **config['schedular_params'])
-    
+    if config["warmup_epochs"] > 0:
+        warmup_steps = config["warmup_epochs"] # len(train_dl) * config["warmup_epochs"]
+        opt_lr_schedular = optim.lr_scheduler.CosineAnnealingLR(optimizer, **config['schedular_params'])
+        warmup_lr_schedular = optim.lr_scheduler.LinearLR(optimizer, start_factor=1e-6, end_factor=1.0, total_iters = warmup_steps)
+        schedular = optim.lr_scheduler.SequentialLR(
+            optimizer,
+            schedulers=[warmup_lr_schedular, opt_lr_schedular],
+            milestones=[warmup_steps] 
+        )
+    else:
+        schedular = optim.lr_scheduler.CosineAnnealingLR(optimizer, **config['schedular_params'])
+
     if is_distributed:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
         model = DDP(model, device_ids=[rank])
@@ -159,11 +161,11 @@ def main(rank=0, global_rank=0, world_size=1, config={}, args=None, is_distribut
     grad_clip = config.get("grad_clip", 1.0)
 
     final_model = train(
-        model= model,
+        model = model,
         data = train_loader,
         loss_function = loss,
         optimizer=optimizer,
-        schedular=opt_lr_schedular,
+        schedular = schedular,
         epochs = epochs,
         device = rank,
         global_rank = global_rank,
@@ -199,9 +201,12 @@ if __name__ == "__main__":
     config["return_logs"] = args.verbose
     config["model_save_path"] = os.path.join(config.get("model_save_path", "saved_models"), args.save_path)
     config["grad_clip"] = args.grad_clip
-
     config["data"]["num_workers"] = args.nw 
     config["data"]["prefetch_factor"] = args.pf
+    config["warmup_epochs"] = 0 # no warmup epoch by default
+    config["distributed"] = args.distributed
+    config["data"]["distributed"] = args.distributed
+
     if args.bs:
         config["data"]["batch_size"] = args.bs
     if args.save_every:
@@ -216,9 +221,11 @@ if __name__ == "__main__":
         config["opt_params"]["lr"] = args.lr
     if args.wd:
         config["opt_params"]["weight_decay"] = args.wd
+    if args.warmup_epochs:
+        config["warmup_epochs"] = args.warmup_epochs
     if args.epochs:
         config["epochs"] = args.epochs
-        config["schedular_params"]["T_max"] = args.epochs
+        config["schedular_params"]["T_max"] = args.epochs - config["warmup_epochs"]
     if args.distributed:
         config["distributed"] = args.distributed
         config["data"]["distributed"] = args.distributed
@@ -252,5 +259,7 @@ if __name__ == "__main__":
             print("-"*50)
         print(f"Launching DDP process. Global Rank: {global_rank} | Local Rank: {local_rank}")
         main(rank=local_rank, global_rank=global_rank, world_size=world_size, config=config, args=args, is_distributed=args.distributed)
+    else:
+        main(rank=args.gpu, global_rank=0, world_size=1, config=config, args=args, is_distributed=args.distributed)
     pt2 = time.perf_counter()
     print(f"pretraining time: {format_time(pt2 - pt1)}")
