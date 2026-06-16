@@ -229,7 +229,7 @@ if __name__ == "__main__":
             # config["opt_params"]["betas"] = (0.9, 0.95) # for mae
     if args.lr:
         world_size = int(os.environ.get("WORLD_SIZE", 1))
-        print(world_size)
+        # print(world_size)
         config["opt_params"]["lr"] = args.lr * world_size * config["data"]["batch_size"] / 256.0
     if args.wd:
         config["opt_params"]["weight_decay"] = args.wd
