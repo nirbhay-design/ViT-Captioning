@@ -28,6 +28,7 @@ def get_args():
     parser.add_argument('--dataset', type=str, default='coco', help='dataset to choose')
     parser.add_argument('--gpu', type=int, default=0, help='GPU id to use')
     parser.add_argument('--verbose', action='store_true', help='Whether to return logs during training')
+    parser.add_argument('--no_cosine', action='store_true', help='Whether to train with cosine scheduling or not')
     parser.add_argument('--distributed', action='store_true', help='Whether to run distributed training')
     parser.add_argument('--save_path', type=str, default='model_weights.pth', help='Path to save the trained model weights')
     parser.add_argument('--opt', type=str, default='AdamW', help='Optimizer to use')
@@ -107,7 +108,8 @@ def train(
             torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
             optimizer.step()
 
-        schedular.step()
+        if schedular is not None:
+            schedular.step()
 
         print(f'[GPU{device}] epoch: [{epoch+1}/{epochs}] loss: {float(cur_loss):.3f}')
 
@@ -139,17 +141,22 @@ def main(rank=0, global_rank=0, world_size=1, config={}, args=None, is_distribut
 
     loss = nn.CrossEntropyLoss(ignore_index=dl['vocab'].stoi['<PAD>'])
     optimizer = optim.AdamW(model.parameters(), **config['opt_params'])
-    if config["warmup_epochs"] > 0:
-        warmup_steps = config["warmup_epochs"] # len(train_dl) * config["warmup_epochs"]
-        opt_lr_schedular = optim.lr_scheduler.CosineAnnealingLR(optimizer, **config['schedular_params'])
-        warmup_lr_schedular = optim.lr_scheduler.LinearLR(optimizer, start_factor=1e-6, end_factor=1.0, total_iters = warmup_steps)
-        schedular = optim.lr_scheduler.SequentialLR(
-            optimizer,
-            schedulers=[warmup_lr_schedular, opt_lr_schedular],
-            milestones=[warmup_steps] 
-        )
+    if not config["no_cosine"]:
+        if config["warmup_epochs"] > 0:
+            warmup_steps = config["warmup_epochs"] # len(train_dl) * config["warmup_epochs"]
+            opt_lr_schedular = optim.lr_scheduler.CosineAnnealingLR(optimizer, **config['schedular_params'])
+            warmup_lr_schedular = optim.lr_scheduler.LinearLR(optimizer, start_factor=1e-6, end_factor=1.0, total_iters = warmup_steps)
+            schedular = optim.lr_scheduler.SequentialLR(
+                optimizer,
+                schedulers=[warmup_lr_schedular, opt_lr_schedular],
+                milestones=[warmup_steps] 
+            )
+        else:
+            schedular = optim.lr_scheduler.CosineAnnealingLR(optimizer, **config['schedular_params'])
     else:
-        schedular = optim.lr_scheduler.CosineAnnealingLR(optimizer, **config['schedular_params'])
+        schedular = None 
+    if global_rank == 0:
+        print(f"schedular: {schedular}")
 
     if is_distributed:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
@@ -206,6 +213,7 @@ if __name__ == "__main__":
     config["warmup_epochs"] = 0 # no warmup epoch by default
     config["distributed"] = args.distributed
     config["data"]["distributed"] = args.distributed
+    config["no_cosine"] = args.no_cosine 
 
     if args.bs:
         config["data"]["batch_size"] = args.bs
@@ -218,7 +226,9 @@ if __name__ == "__main__":
             config["opt_params"].pop("nesterov", -1)
             config["opt_params"]["betas"] = (0.9, 0.95) # for mae
     if args.lr:
-        config["opt_params"]["lr"] = args.lr
+        world_size = int(os.environ.get("WORLD_SIZE", 1))
+        print(world_size)
+        config["opt_params"]["lr"] = args.lr * world_size * config["data"]["batch_size"] / 256.0
     if args.wd:
         config["opt_params"]["weight_decay"] = args.wd
     if args.warmup_epochs:
@@ -260,6 +270,12 @@ if __name__ == "__main__":
         print(f"Launching DDP process. Global Rank: {global_rank} | Local Rank: {local_rank}")
         main(rank=local_rank, global_rank=global_rank, world_size=world_size, config=config, args=args, is_distributed=args.distributed)
     else:
+        print("environment: ")
+        print(f"YAML: {args.config}")
+        for key, value in config.items():
+            print(f"==> {key}: {value}")
+
+        print("-"*50)
         main(rank=args.gpu, global_rank=0, world_size=1, config=config, args=args, is_distributed=args.distributed)
     pt2 = time.perf_counter()
     print(f"pretraining time: {format_time(pt2 - pt1)}")
