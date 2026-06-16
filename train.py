@@ -141,6 +141,8 @@ def main(rank=0, global_rank=0, world_size=1, config={}, args=None, is_distribut
 
     loss = nn.CrossEntropyLoss(ignore_index=dl['vocab'].stoi['<PAD>'])
     optimizer = optim.AdamW(model.parameters(), **config['opt_params'])
+    if global_rank == 0:
+        print(optimizer)
     if not config["no_cosine"]:
         if config["warmup_epochs"] > 0:
             warmup_steps = config["warmup_epochs"] # len(train_dl) * config["warmup_epochs"]
@@ -224,7 +226,7 @@ if __name__ == "__main__":
         if args.opt in ["ADAM", "AdamW"]:
             config["opt_params"].pop("momentum", -1)
             config["opt_params"].pop("nesterov", -1)
-            config["opt_params"]["betas"] = (0.9, 0.95) # for mae
+            # config["opt_params"]["betas"] = (0.9, 0.95) # for mae
     if args.lr:
         world_size = int(os.environ.get("WORLD_SIZE", 1))
         print(world_size)
