@@ -253,6 +253,13 @@ if __name__ == "__main__":
     torch.backends.cuda.matmul.allow_tf32 = True
     torch.backends.cudnn.allow_tf32 = True
 
+    print("environment: ")
+    print(f"YAML: {args.config}")
+    for key, value in config.items():
+        print(f"==> {key}: {value}")
+
+    print("-"*50)
+
     pt1 = time.perf_counter()
     # pretraining phase
     if args.distributed:
@@ -260,22 +267,9 @@ if __name__ == "__main__":
         local_rank = int(os.environ["LOCAL_RANK"])
         world_size = int(os.environ["WORLD_SIZE"])
         global_rank = int(os.environ["RANK"])
-        if global_rank == 0:
-            print("environment: ")
-            print(f"YAML: {args.config}")
-            for key, value in config.items():
-                print(f"==> {key}: {value}")
-
-            print("-"*50)
         print(f"Launching DDP process. Global Rank: {global_rank} | Local Rank: {local_rank}")
         main(rank=local_rank, global_rank=global_rank, world_size=world_size, config=config, args=args, is_distributed=args.distributed)
     else:
-        print("environment: ")
-        print(f"YAML: {args.config}")
-        for key, value in config.items():
-            print(f"==> {key}: {value}")
-
-        print("-"*50)
         main(rank=args.gpu, global_rank=0, world_size=1, config=config, args=args, is_distributed=args.distributed)
     pt2 = time.perf_counter()
     print(f"pretraining time: {format_time(pt2 - pt1)}")

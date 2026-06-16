@@ -46,3 +46,9 @@ Model parameters: 48583394
 schedular: None
 [GPU0] epoch: [1/80] loss: 5.239
 [GPU1] epoch: [1/80] loss: 5.243
+[GPU1] epoch: [2/80] loss: 3.850
+[GPU0] epoch: [2/80] loss: 3.861
+[GPU0] epoch: [3/80] loss: 3.517
+[GPU1] epoch: [3/80] loss: 3.510
+[GPU0] epoch: [4/80] loss: 3.317
+[GPU1] epoch: [4/80] loss: 3.305
