@@ -90,6 +90,6 @@
 
 CUDA_VISIBLE_DEVICES=1 nohup python test.py --config configs/res.detr.vit.yaml \
     --vocab_path vocabulary/vocab.coco.detr.pkl \
-    --model_path saved_models/detr.lr1e-4.wd0.05.e400.dist.pth \
+    --model_path saved_models/detr.lr1e-4.wd0.05.e80.dist.pth \
     --decoding_strategy greedy min_p top_k top_p --min_p 0.05 \
     --top_p 0.95 --k 50 --temp 0.7 --bs 32 --nw 2 --pf 1 > logs/test.log 2>&1 &

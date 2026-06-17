@@ -67,7 +67,7 @@ def generate_caption(model_path, test_loader, vocab, config, decoding_strategy, 
                 "original": caption_decoding_strategy["original"][i],
                 **{stg: caption_decoding_strategy[stg][i] for stg in decoding_strategy}
             }
-        progress(idx+1, len(test_loader))
+        # progress(idx+1, len(test_loader))
     return caption_list
 
 if __name__ == "__main__":

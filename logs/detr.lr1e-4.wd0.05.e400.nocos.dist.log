@@ -538,3 +538,5 @@ Model saved at: saved_models/detr.lr1e-4.wd0.05.e400.nocos.dist.ec200.pth
 [GPU1] epoch: [229/400] loss: 1.171
 [GPU1] epoch: [230/400] loss: 1.154
 [GPU0] epoch: [230/400] loss: 1.164
+[GPU0] epoch: [231/400] loss: 1.161
+[GPU1] epoch: [231/400] loss: 1.162
