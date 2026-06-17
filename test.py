@@ -60,14 +60,14 @@ def generate_caption(model_path, test_loader, vocab, config, decoding_strategy, 
         caption_decoding_strategy = {}
         caption_decoding_strategy["original"] = decoder.get_caption(caption)
         for strategy in decoding_strategy:
-            cur_caption = decoder.get_caption(strategy_function[strategy](emb=emb, pos_enc=pos_enc, **params_for_decoding[strategy]))
+            cur_caption = decoder.get_caption(strategy_function[strategy](emb=emb, pos_enc=pos_enc, **params_for_decoding[strategy]).detach().cpu())
             caption_decoding_strategy[strategy] = cur_caption
         for i in range(image.shape[0]):
             caption_list[f"{idx}_{i}"] = {
                 "original": caption_decoding_strategy["original"][i],
                 **{stg: caption_decoding_strategy[stg][i] for stg in decoding_strategy}
             }
-        # progress(idx+1, len(test_loader))
+        progress(idx+1, len(test_loader))
     return caption_list
 
 if __name__ == "__main__":
