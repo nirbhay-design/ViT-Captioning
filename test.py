@@ -1,5 +1,7 @@
-# TODO quantitative 
-# TODO need to update this for entire dataloader
+# TODO - image path, vocab path, model path
+# TODO - use Decoding class
+# TODO - image transformations from train.py, model loading from train.py, config from train.py 
+# TODO - based on command line argument - flip between greedy, beam search, min_p, top_k
 
 import torchtext; torchtext.disable_torchtext_deprecation_warning()
 from data.vocab import Vocab
@@ -14,47 +16,31 @@ import argparse
 from src.caption_model import *
 from src.eval_script.decoding import Decoding
 from data.vocab import Vocabulary
-from train import yaml_loader
+from utils import yaml_loader
 from data import dataloaders
 import json 
+import time 
 
 def get_args():
     parser = argparse.ArgumentParser(description="Generate captions for an image using a trained model")
-    parser.add_argument("--image_path", type=str, required=True, help="Path to the input image or directory")
     parser.add_argument("--vocab_path", type=str, required=True, help="Path to the vocabulary file.")
     parser.add_argument("--model_path", type=str, required=True, help="Path to the trained model file.")
-    parser.add_argument("--decoding_strategy", type=str, default="greedy", choices=["greedy", "beam_search", "min_p", "top_k", "top_p"], help="Decoding strategy to use for caption generation.")
+    parser.add_argument("--decoding_strategy", type=str, nargs='+', default=["greedy", "min_p", "top_k", "top_p"], help="Decoding strategy to use for caption generation.")
     parser.add_argument("--config", type=str, required=True, help="Path to the configuration file.")
-    parser.add_argument("--p", type=float, default = 0.95, required=False, help="p value for min_p or top_p")
-    parser.add_argument("--k", type=int, default = 1000, required=False, help="k value for top_k")
+    parser.add_argument("--min_p", type=float, default = 0.05, required=False, help="p value for min_p")
+    parser.add_argument("--top_p", type=float, default = 0.95, required=False, help="p value for top_p")
+    parser.add_argument("--k", type=int, default = 50, required=False, help="k value for top_k")
     parser.add_argument("--beam", type=int, default=5, required=False, help="beam size for beam search")
     parser.add_argument("--max_len", type=int, default = 30, required=False, help="max_length for generated caption")
-    parser.add_argument("--num_images", type=int, required=False, help="max number of images to generated caption")
-    parser.add_argument('--save_img', action='store_true', help='Whether to save the image or not')
+    parser.add_argument("--temp", type=float, default = 0.7, required=False, help="temperature value for min_p or top_p")
+    parser.add_argument('--bs', type=int, default=64, help='Batch size')
+    parser.add_argument('--nw', type=int, default=4, help='Number of workers')
+    parser.add_argument('--pf', type=int, default=2, help='Prefetch factor')
     return parser.parse_args()
 
-def load_image(image_path, save_img = False):
-    mean = (0.444, 0.421, 0.385)
-    std = (0.285, 0.277, 0.286)
-    img_transforms = v2.Compose([
-        v2.ToImage(),
-        v2.Resize(config['data']['img_size'], antialias = True),
-        v2.ToDtype(torch.float32, scale=True),
-        v2.Normalize(mean = mean, std=std)
-    ])
-    raw_image = io.read_image(image_path)
-    transformed_tensor = img_transforms(raw_image) 
-    if save_img:
-        torchvision.utils.save_image(transformed_tensor, 'image.png') 
-    return transformed_tensor.unsqueeze(0)  # Add batch dimension
-
-def get_data():
-    dl = dataloaders.get(args.dataset, dataloaders["coco"])(config["data"])
-
-def generate_caption(model_path, image_path, vocab_path, decoding_strategy, save_img = False, **kwargs):
-    vocab = pickle.load(open(args.vocab_path, 'rb'))
+def generate_caption(model_path, test_loader, vocab, config, decoding_strategy, params_for_decoding):
     model  = CaptionModel(**{**config['model_params'], "vocab_size":len(vocab.itos.keys())}).to(device) 
-    state_dict = torch.load(args.model_path, map_location=device)
+    state_dict = torch.load(model_path, map_location=device)
     print(model.load_state_dict(state_dict))
     model.eval()
     decoder = Decoding(model, vocab)
@@ -66,24 +52,22 @@ def generate_caption(model_path, image_path, vocab_path, decoding_strategy, save
         "top_p": decoder.top_p
     }
 
-    all_image_paths = []
-
-    if os.path.isdir(image_path):
-        all_image_paths = list(map(lambda x: os.path.join(image_path, x), os.listdir(image_path)))
-    else:
-        all_image_paths = [image_path]
-
-    if args.num_images:
-        all_image_paths = all_image_paths[:args.num_images]
-
     caption_list = {}
 
-    for idx, img_path in enumerate(all_image_paths):
-        image = load_image(img_path, save_img = save_img)
+    for idx, (image, caption) in enumerate(test_loader):
         image = image.to(device)
-        caption = decoder.get_caption(strategy_function[decoding_strategy](image, **kwargs))
-        caption_list[img_path] = caption
-        progress(idx+1, len(all_image_paths))
+        emb, pos_enc = model.model.get_embedding(image)
+        caption_decoding_strategy = {}
+        caption_decoding_strategy["original"] = decoder.get_caption(caption)
+        for strategy in decoding_strategy:
+            cur_caption = decoder.get_caption(strategy_function[strategy](emb=emb, pos_enc=pos_enc, **params_for_decoding[strategy]))
+            caption_decoding_strategy[strategy] = cur_caption
+        for i in range(image.shape[0]):
+            caption_list[f"{idx}_{i}"] = {
+                "original": caption_decoding_strategy["original"][i],
+                **{stg: caption_decoding_strategy[stg][i] for stg in decoding_strategy}
+            }
+        # progress(idx+1, len(test_loader))
     return caption_list
 
 if __name__ == "__main__":
@@ -92,24 +76,25 @@ if __name__ == "__main__":
     config = yaml_loader(args.config)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+    config["data"]["num_workers"] = args.nw 
+    config["data"]["prefetch_factor"] = args.pf
+    config["data"]["batch_size"] = args.bs
+    config["data"]["vocab_save_path"] = args.vocab_path
+
+    dl = dataloaders["coco"](config["data"])
+    test_loader = dl['test_loader']
+
     params_for_decoding = {
         "greedy": {"max_len": args.max_len},
-        "beam_search": {"max_len": args.max_len, "beam_width": args.beam},
-        "min_p": {"max_len": args.max_len, "p": args.p},
-        "top_k": {"max_len": args.max_len, "k": args.k},
-        "top_p": {"max_len": args.max_len, "p": args.p}
+        "beam_search": {"max_len": args.max_len, "beam_width": args.beam, "temp": args.temp},
+        "min_p": {"max_len": args.max_len, "p": args.min_p, "temp": args.temp},
+        "top_k": {"max_len": args.max_len, "k": args.k, "temp": args.temp},
+        "top_p": {"max_len": args.max_len, "p": args.top_p, "temp": args.temp}
     }
-    cur_decoding_params = params_for_decoding[args.decoding_strategy]
-    generated_caption_list = generate_caption(args.model_path, args.image_path, args.vocab_path, args.decoding_strategy, args.save_img, **cur_decoding_params)
-    for i,j in generated_caption_list.items():
-        print(f"{i}: {j}")
-    
-    if len(generated_caption_list) > 1:
-        decoding_name = args.decoding_strategy
-        for _, values in params_for_decoding[decoding_name].items():
-            decoding_name += f"_{str(values)}"
-        os.makedirs("generated_captions", exist_ok = True)
-        file_path = os.path.join("generated_captions", ".".join(args.model_path.split("/")[-1].split(".")[:-1]) + "_" + decoding_name + "_" + args.image_path.split("/")[-1] + f"_{args.num_images if args.num_images else ''}" + '.json')
-        print(f"saving to: {file_path}")
-        with open(file_path, "w") as f:
-            json.dump(generated_caption_list, f, indent = 4)
+    vocab = dl["vocab"]
+    generated_caption_list = generate_caption(args.model_path, test_loader, vocab, config, args.decoding_strategy, params_for_decoding)
+
+    file_path = os.path.join("generated_captions", ".".join(args.model_path.split("/")[-1].split(".")[:-1]) + "_" + ".".join(args.decoding_strategy) + '.json')
+    print(f"saving to: {file_path}")
+    with open(file_path, "w") as f:
+        json.dump(generated_caption_list, f, indent = 4)    

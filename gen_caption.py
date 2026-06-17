@@ -16,8 +16,9 @@ import argparse
 from src.caption_model import *
 from src.eval_script.decoding import Decoding
 from data.vocab import Vocabulary
-from train import yaml_loader
+from utils import yaml_loader
 import json 
+import time 
 
 def get_args():
     parser = argparse.ArgumentParser(description="Generate captions for an image using a trained model")
@@ -30,9 +31,17 @@ def get_args():
     parser.add_argument("--k", type=int, default = 1000, required=False, help="k value for top_k")
     parser.add_argument("--beam", type=int, default=5, required=False, help="beam size for beam search")
     parser.add_argument("--max_len", type=int, default = 30, required=False, help="max_length for generated caption")
+    parser.add_argument("--temp", type=float, default = 0.7, required=False, help="temperature value for min_p or top_p")
     parser.add_argument("--num_images", type=int, required=False, help="max number of images to generated caption")
     parser.add_argument('--save_img', action='store_true', help='Whether to save the image or not')
     return parser.parse_args()
+
+def stream_text(text, delay=0.03):
+    for char in text:
+        sys.stdout.write(char)
+        sys.stdout.flush()
+        time.sleep(delay)
+    print()
 
 def load_image(image_path, save_img = False):
     mean = (0.444, 0.421, 0.385)
@@ -50,9 +59,9 @@ def load_image(image_path, save_img = False):
     return transformed_tensor.unsqueeze(0)  # Add batch dimension
 
 def generate_caption(model_path, image_path, vocab_path, decoding_strategy, save_img = False, **kwargs):
-    vocab = pickle.load(open(args.vocab_path, 'rb'))
+    vocab = pickle.load(open(vocab_path, 'rb'))
     model  = CaptionModel(**{**config['model_params'], "vocab_size":len(vocab.itos.keys())}).to(device) 
-    state_dict = torch.load(args.model_path, map_location=device)
+    state_dict = torch.load(model_path, map_location=device)
     print(model.load_state_dict(state_dict))
     model.eval()
     decoder = Decoding(model, vocab)
@@ -92,15 +101,17 @@ if __name__ == "__main__":
 
     params_for_decoding = {
         "greedy": {"max_len": args.max_len},
-        "beam_search": {"max_len": args.max_len, "beam_width": args.beam},
-        "min_p": {"max_len": args.max_len, "p": args.p},
-        "top_k": {"max_len": args.max_len, "k": args.k},
-        "top_p": {"max_len": args.max_len, "p": args.p}
+        "beam_search": {"max_len": args.max_len, "beam_width": args.beam, "temp": args.temp},
+        "min_p": {"max_len": args.max_len, "p": args.p, "temp": args.temp},
+        "top_k": {"max_len": args.max_len, "k": args.k, "temp": args.temp},
+        "top_p": {"max_len": args.max_len, "p": args.p, "temp": args.temp}
     }
     cur_decoding_params = params_for_decoding[args.decoding_strategy]
     generated_caption_list = generate_caption(args.model_path, args.image_path, args.vocab_path, args.decoding_strategy, args.save_img, **cur_decoding_params)
-    for i,j in generated_caption_list.items():
-        print(f"{i}: {j}")
+    if len(generated_caption_list) == 1:
+        for i,j in generated_caption_list.items():
+            print(f"caption for {i}:")
+            stream_text(j[0], 0.04)
     
     if len(generated_caption_list) > 1:
         decoding_name = args.decoding_strategy

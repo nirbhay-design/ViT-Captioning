@@ -4,7 +4,7 @@ class Decoding():
     def __init__(self, model, vocab):
         self.model = model
         self.vocab = vocab
-        self.sos_token = self.vocab.stoi['<SOS>']
+        self.sos_token = int(self.vocab.stoi['<SOS>'])
 
     def get_caption(self, y_out):
         captions = []
@@ -13,11 +13,14 @@ class Decoding():
             captions.append(caption)
         return captions
 
-    def greedy(self, x, max_len=30):  
-        embedding, pos_encoding = self.model.model.get_embedding(x)
+    def greedy(self, x=None, max_len=30, emb=None, pos_enc=None):
+        if x is None:
+            embedding, pos_encoding = emb, pos_enc
+        else:  
+            embedding, pos_encoding = self.model.model.get_embedding(x)
         device = embedding.device
         batch_size = embedding.shape[0]
-        y_out = torch.ones(batch_size, 1, device=device).type(torch.int64) # <SOS> token vector
+        y_out = torch.full((batch_size, 1), self.sos_token, device=device).type(torch.int64) # <SOS> token vector
         for _ in range(max_len):
             decoder_output = self.model.model.get_decoding(embedding, pos_encoding, y_out)
             _, predicted_words = decoder_output[:,-1:,:].max(dim=-1) # greedy 
@@ -52,14 +55,17 @@ class Decoding():
         
         return y_out
 
-    def min_p(self, x, max_len=30, p = 0.7):
-        embedding, pos_encoding = self.model.model.get_embedding(x)
+    def min_p(self, x=None, max_len=30, p = 0.05, temp = 0.7, emb=None, pos_enc=None):
+        if x is None:
+            embedding, pos_encoding = emb, pos_enc
+        else:  
+            embedding, pos_encoding = self.model.model.get_embedding(x)
         device = embedding.device
         batch_size = embedding.shape[0]
-        y_out = torch.ones(batch_size, 1, device=device).type(torch.int64) # <SOS> token vector
+        y_out = torch.full((batch_size, 1), self.sos_token, device=device).type(torch.int64) # <SOS> token vector
         for _ in range(max_len):
             decoder_output = self.model.model.get_decoding(embedding, pos_encoding, y_out)
-            probs = F.softmax(decoder_output[:,-1,:], dim = -1)
+            probs = F.softmax(decoder_output[:,-1,:]/temp, dim = -1)
             max_prob, _ = probs.max(dim = -1, keepdim=True)
             threshold = p * max_prob
             mask = (probs >= threshold)
@@ -73,14 +79,17 @@ class Decoding():
             y_out = torch.cat([y_out, sampled_index], dim=1)
         return y_out
 
-    def top_k(self, x, max_len=30, k=5):
-        embedding, pos_encoding = self.model.model.get_embedding(x)
+    def top_k(self, x=None, max_len=30, k=50, temp = 0.7, emb=None, pos_enc=None):
+        if x is None:
+            embedding, pos_encoding = emb, pos_enc
+        else:  
+            embedding, pos_encoding = self.model.model.get_embedding(x)
         device = embedding.device
         batch_size = embedding.shape[0]
-        y_out = torch.ones(batch_size, 1, device=device).type(torch.int64)
+        y_out = torch.full((batch_size, 1), self.sos_token, device=device).type(torch.int64) # <SOS> token vector
         for _ in range(max_len):
             decoder_output = self.model.model.get_decoding(embedding, pos_encoding, y_out)
-            probs = F.softmax(decoder_output[:,-1,:], dim = -1)
+            probs = F.softmax(decoder_output[:,-1,:]/temp, dim = -1)
             values_top_k, indicies = probs.topk(k, dim = -1) # topk probs
             prob_mask = torch.zeros_like(probs)
             prob_mask.scatter_(dim = -1, index = indicies, src=values_top_k)
@@ -89,14 +98,17 @@ class Decoding():
             y_out = torch.cat([y_out, sampled_index], dim=1)
         return y_out
 
-    def top_p(self, x, max_len=30, p=0.9):
-        embedding, pos_encoding = self.model.model.get_embedding(x)
+    def top_p(self, x=None, max_len=30, p=0.9, temp=0.7, emb=None, pos_enc=None):
+        if x is None:
+            embedding, pos_encoding = emb, pos_enc
+        else:  
+            embedding, pos_encoding = self.model.model.get_embedding(x)
         device = embedding.device
         batch_size = embedding.shape[0]
-        y_out = torch.ones(batch_size, 1, device=device).type(torch.int64)
+        y_out = torch.full((batch_size, 1), self.sos_token, device=device).type(torch.int64) # <SOS> token vector
         for _ in range(max_len):
             decoder_output = self.model.model.get_decoding(embedding, pos_encoding, y_out)
-            probs = F.softmax(decoder_output[:,-1,:], dim = -1) 
+            probs = F.softmax(decoder_output[:,-1,:]/temp, dim = -1) 
             sorted_probs, sorted_prob_index = probs.sort(dim=-1, descending=True)
             cum_sum_sorted = torch.cumsum(sorted_probs, dim = -1)
             mask = (cum_sum_sorted <= p)
@@ -108,4 +120,3 @@ class Decoding():
             sampled_index = torch.gather(sorted_prob_index, -1, sampled_index_sorted)
             y_out = torch.cat([y_out, sampled_index], dim=1)
         return y_out
-            
