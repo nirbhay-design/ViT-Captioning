@@ -1,0 +1,76 @@
+W0617 13:42:14.606000 139938952609792 torch/distributed/run.py:757] 
+W0617 13:42:14.606000 139938952609792 torch/distributed/run.py:757] *****************************************
+W0617 13:42:14.606000 139938952609792 torch/distributed/run.py:757] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W0617 13:42:14.606000 139938952609792 torch/distributed/run.py:757] *****************************************
+/data/home/nirbhays/envs/mlenv/lib/python3.10/site-packages/torchtext/data/__init__.py:4: UserWarning: 
+/!\ IMPORTANT WARNING ABOUT TORCHTEXT STATUS /!\ 
+Torchtext is deprecated and the last released version will be 0.18 (this one). You can silence this warning by calling the following at the beginnign of your scripts: `import torchtext; torchtext.disable_torchtext_deprecation_warning()`
+  warnings.warn(torchtext._TORCHTEXT_DEPRECATION_MSG)
+/data/home/nirbhays/envs/mlenv/lib/python3.10/site-packages/torchtext/data/__init__.py:4: UserWarning: 
+/!\ IMPORTANT WARNING ABOUT TORCHTEXT STATUS /!\ 
+Torchtext is deprecated and the last released version will be 0.18 (this one). You can silence this warning by calling the following at the beginnign of your scripts: `import torchtext; torchtext.disable_torchtext_deprecation_warning()`
+  warnings.warn(torchtext._TORCHTEXT_DEPRECATION_MSG)
+environment: 
+YAML: configs/res.detr.vit.yaml
+==> SEED: 42
+==> data: {'data_path': '/data/home/nirbhays/dataset', 'batch_size': 256, 'img_size': [256, 340], 'vocab_save_path': 'vocabulary/vocab.coco.detr.pkl', 'num_workers': 4, 'pin_memory': True, 'prefetch_factor': 2, 'distributed': True}environment: 
+
+==> return_logs: FalseYAML: configs/res.detr.vit.yaml
+
+==> epochs: 400==> SEED: 42
+
+==> gpu_id: 0
+==> data: {'data_path': '/data/home/nirbhays/dataset', 'batch_size': 256, 'img_size': [256, 340], 'vocab_save_path': 'vocabulary/vocab.coco.detr.pkl', 'num_workers': 4, 'pin_memory': True, 'prefetch_factor': 2, 'distributed': True}==> opt: AdamW
+
+==> return_logs: False==> opt_params: {'lr': 0.0002, 'weight_decay': 0.05}
+
+==> epochs: 400==> schedular_params: {'T_max': 400, 'eta_min': 0.001}
+
+==> gpu_id: 0==> model_params: {'backbone_layers': ['conv1', 'bn1', 'relu', 'maxpool', 'layer1', 'layer2', 'layer3', 'layer4'], 'encoder_layers': 6, 'decoder_layers': 6, 'encoder_heads': 8, 'decoder_heads': 8, 'embed_dim': 256, 'dropout': 0.1}
+
+==> opt: AdamW==> distributed: True
+
+==> opt_params: {'lr': 0.0002, 'weight_decay': 0.05}==> model_save_path: saved_models/detr.lr1e-4.wd0.05.e400.nocos.dist.pth
+
+==> schedular_params: {'T_max': 400, 'eta_min': 0.001}==> save_every: 50
+
+==> model_params: {'backbone_layers': ['conv1', 'bn1', 'relu', 'maxpool', 'layer1', 'layer2', 'layer3', 'layer4'], 'encoder_layers': 6, 'decoder_layers': 6, 'encoder_heads': 8, 'decoder_heads': 8, 'embed_dim': 256, 'dropout': 0.1}==> config: configs/res.detr.vit.yaml
+
+==> distributed: True==> grad_clip: 1.0
+
+==> model_save_path: saved_models/detr.lr1e-4.wd0.05.e400.nocos.dist.pth==> warmup_epochs: 0
+
+==> save_every: 50==> no_cosine: True
+
+==> config: configs/res.detr.vit.yaml--------------------------------------------------
+
+==> grad_clip: 1.0
+==> warmup_epochs: 0
+==> no_cosine: True
+--------------------------------------------------
+Launching DDP process. Global Rank: 0 | Local Rank: 0
+Launching DDP process. Global Rank: 1 | Local Rank: 1
+Vocabulary saved at vocabulary/vocab.coco.detr.pkl
+Vocabulary saved at vocabulary/vocab.coco.detr.pkl
+pad_idx: 0
+Train dataset: 82783
+Test dataset: 40504
+Train dataloader: 162
+Test dataloader: 159
+vocab_size: 14114
+pad_idx: 0
+Model parameters: 48583394
+AdamW (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    capturable: False
+    differentiable: False
+    eps: 1e-08
+    foreach: None
+    fused: None
+    lr: 0.0002
+    maximize: False
+    weight_decay: 0.05
+)
+schedular: None
