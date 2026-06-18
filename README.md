@@ -79,4 +79,4 @@ CUDA_VISIBLE_DEVICES=1 nohup python test.py --config configs/res.detr.vit.yaml \
 - **Greedy**: <SOS> a man sitting at a table with a plate of food <EOS>
 - **top_k**: <SOS> a man is sitting at a table with various food dishes <EOS>
 - **top_p**: <SOS> a man sitting at a table topped with a plate of food <EOS>
-- **min_p**: <SOS> a man in a wheelchair sitting at a table with plates of food <EOS>
+- **min_p**: <SOS> a man sitting at a table with food in front of him <EOS>
