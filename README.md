@@ -74,7 +74,7 @@ CUDA_VISIBLE_DEVICES=1 nohup python test.py --config configs/res.detr.vit.yaml \
 
 ## **Sample Captioning**
 
-[image](image.png)
+![image](image.png)
 
 - **Greedy**: <SOS> a man sitting at a table with a plate of food <EOS>
 - **top_k**: <SOS> a man is sitting at a table with various food dishes <EOS>
