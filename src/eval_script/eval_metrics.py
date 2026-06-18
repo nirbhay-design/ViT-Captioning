@@ -23,10 +23,10 @@ def get_metrics(candidates, references):
         "rouge1": round(output_r["rouge1_fmeasure"].item(), 4),
         "rouge2": round(output_r["rouge2_fmeasure"].item(), 4),
         "rougeL": round(output_r["rougeL_fmeasure"].item(), 4),
-        "blue1": round(output1.item(), 4),
-        "blue2": round(output2.item(), 4),
-        "blue3": round(output3.item(), 4),
-        "blue4": round(output4.item(), 4),
+        "bleu1": round(output1.item(), 4),
+        "bleu2": round(output2.item(), 4),
+        "bleu3": round(output3.item(), 4),
+        "bleu4": round(output4.item(), 4),
     }
 
     return output_dict 

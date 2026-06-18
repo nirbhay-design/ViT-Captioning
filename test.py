@@ -15,6 +15,7 @@ from torchtext.data import get_tokenizer
 import argparse
 from src.caption_model import *
 from src.eval_script.decoding import Decoding
+from src.eval_script.eval_metrics import get_metrics
 from data.vocab import Vocabulary
 from utils import yaml_loader
 from data import dataloaders
@@ -23,10 +24,10 @@ import time
 
 def get_args():
     parser = argparse.ArgumentParser(description="Generate captions for an image using a trained model")
-    parser.add_argument("--vocab_path", type=str, required=True, help="Path to the vocabulary file.")
-    parser.add_argument("--model_path", type=str, required=True, help="Path to the trained model file.")
+    parser.add_argument("--vocab_path", type=str, required=False, help="Path to the vocabulary file.")
+    parser.add_argument("--model_path", type=str, required=False, help="Path to the trained model file.")
     parser.add_argument("--decoding_strategy", type=str, nargs='+', default=["greedy", "min_p", "top_k", "top_p"], help="Decoding strategy to use for caption generation.")
-    parser.add_argument("--config", type=str, required=True, help="Path to the configuration file.")
+    parser.add_argument("--config", type=str, required=False, help="Path to the configuration file.")
     parser.add_argument("--min_p", type=float, default = 0.05, required=False, help="p value for min_p")
     parser.add_argument("--top_p", type=float, default = 0.95, required=False, help="p value for top_p")
     parser.add_argument("--k", type=int, default = 50, required=False, help="k value for top_k")
@@ -36,6 +37,7 @@ def get_args():
     parser.add_argument('--bs', type=int, default=64, help='Batch size')
     parser.add_argument('--nw', type=int, default=4, help='Number of workers')
     parser.add_argument('--pf', type=int, default=2, help='Prefetch factor')
+    parser.add_argument("--caption_json", type=str, required=False, help="caption json to get caption from")
     return parser.parse_args()
 
 def generate_caption(model_path, test_loader, vocab, config, decoding_strategy, params_for_decoding):
@@ -73,28 +75,53 @@ def generate_caption(model_path, test_loader, vocab, config, decoding_strategy, 
 if __name__ == "__main__":
 
     args = get_args()
-    config = yaml_loader(args.config)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    config["data"]["num_workers"] = args.nw 
-    config["data"]["prefetch_factor"] = args.pf
-    config["data"]["batch_size"] = args.bs
-    config["data"]["vocab_save_path"] = args.vocab_path
+    if not args.caption_json:
+        config = yaml_loader(args.config)
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    dl = dataloaders["coco"](config["data"])
-    test_loader = dl['test_loader']
+        config["data"]["num_workers"] = args.nw 
+        config["data"]["prefetch_factor"] = args.pf
+        config["data"]["batch_size"] = args.bs
+        config["data"]["vocab_save_path"] = args.vocab_path
 
-    params_for_decoding = {
-        "greedy": {"max_len": args.max_len},
-        "beam_search": {"max_len": args.max_len, "beam_width": args.beam, "temp": args.temp},
-        "min_p": {"max_len": args.max_len, "p": args.min_p, "temp": args.temp},
-        "top_k": {"max_len": args.max_len, "k": args.k, "temp": args.temp},
-        "top_p": {"max_len": args.max_len, "p": args.top_p, "temp": args.temp}
-    }
-    vocab = dl["vocab"]
-    generated_caption_list = generate_caption(args.model_path, test_loader, vocab, config, args.decoding_strategy, params_for_decoding)
+        dl = dataloaders["coco"](config["data"])
+        test_loader = dl['test_loader']
 
-    file_path = os.path.join("generated_captions", ".".join(args.model_path.split("/")[-1].split(".")[:-1]) + "_" + ".".join(args.decoding_strategy) + '.json')
-    print(f"saving to: {file_path}")
-    with open(file_path, "w") as f:
-        json.dump(generated_caption_list, f, indent = 4)    
+        params_for_decoding = {
+            "greedy": {"max_len": args.max_len},
+            "beam_search": {"max_len": args.max_len, "beam_width": args.beam, "temp": args.temp},
+            "min_p": {"max_len": args.max_len, "p": args.min_p, "temp": args.temp},
+            "top_k": {"max_len": args.max_len, "k": args.k, "temp": args.temp},
+            "top_p": {"max_len": args.max_len, "p": args.top_p, "temp": args.temp}
+        }
+        vocab = dl["vocab"] 
+
+        generated_caption_list = generate_caption(args.model_path, test_loader, vocab, config, args.decoding_strategy, params_for_decoding)
+        file_path = os.path.join("generated_captions", ".".join(args.model_path.split("/")[-1].split(".")[:-1]) + "_" + ".".join(args.decoding_strategy) + '.json')
+        print(f"saving to: {file_path}")
+        with open(file_path, "w") as f:
+            json.dump(generated_caption_list, f, indent = 4)   
+    else:
+        with open(args.caption_json, "r") as f:
+            generated_caption_list = json.load(f) 
+    
+    reference = []
+    candidate = {}
+
+    for _, caption_dict in generated_caption_list.items():
+        for key, caption in caption_dict.items():
+            if key == "original":
+                reference.append([caption])
+            else:
+                candidate[key] = candidate.get(key, []) + [caption]
+    
+    for key, candidate_caption in candidate.items():
+        print(f"##### scores for {key} #####")
+        metrics = get_metrics(candidate_caption, reference)
+        for metric_name, metric_val in metrics.items():
+            print(f"{metric_name}: {metric_val:.3f}")
+
+    
+
+    
